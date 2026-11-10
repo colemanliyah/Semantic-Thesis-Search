@@ -1,9 +1,9 @@
 import fs from 'fs';
 
-// let data = fs.readFileSync('venues.json', 'utf-8');
-// let { venues } = JSON.parse(data);
+let data = fs.readFileSync('venues.json', 'utf-8');
+let { venues } = JSON.parse(data);
 
-let venues = [{ id: 202 }];
+//let venues = [{ id: 202 }];
 
 for (let i = 0; i < venues.length; i++) {
   let venue = venues[i];

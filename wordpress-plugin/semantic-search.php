@@ -6,9 +6,9 @@
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_script(
         'semantic-search',
-        plugin_dir_url(__FILE__) . 'sketch.js',
+        plugin_dir_url(__FILE__) . 'semantic-search.js',
         [],
         '0.1',
-        true   // load at bottom of page
+        false   // load at bottom of page
     );
 });

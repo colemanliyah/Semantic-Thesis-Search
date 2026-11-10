@@ -1,18 +1,14 @@
 import * as fs from 'fs';
 import { pipeline } from '@xenova/transformers';
 
-// Load the embeddings model
 const extractor = await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5');
 
-// Venues to process. "name" is the label shown in search results (year).
-// Each id needs a thesis-data/thesis-<id>.json from the fetch script.
-let venues = [
-  { name: '2024', id: 202 },
-  { name: 'Lowres 2023', id: 193 },
-  { name: 'Spring 2023', id: 188 },
-];
+// CHANGED: load every venue from venues.json instead of hard-coding 3
+const { venues } = JSON.parse(fs.readFileSync('venues.json', 'utf-8'));
 
-// Turn &amp; &#039; &quot; back into normal characters
+// CHANGED: create the output folder if it's missing
+fs.mkdirSync('embeddings', { recursive: true });
+
 const decode = (s = '') =>
   s
     .replace(/&amp;/g, '&')
@@ -23,7 +19,6 @@ const decode = (s = '') =>
 
 for (let venue of venues) {
   const inFile = `thesis-data/thesis-${venue.id}.json`;
-  // Skip venues you haven't fetched yet
   if (!fs.existsSync(inFile)) {
     console.log(`Skipping ${venue.name}: ${inFile} not found`);
     continue;
@@ -35,17 +30,18 @@ for (let venue of venues) {
     let title = decode(project.project_name);
     let student = project.users?.[0]?.user_name ?? '';
     let description = decode(project.description);
-    let text = title + '\n' + description; // only title + description are embedded (not the name)
+    let text = title + '\n' + description;
     let output;
     try {
       output = await extractor(text, { pooling: 'mean', normalize: true });
     } catch (e) {
       console.log(e);
-      continue; // skip this project instead of crashing
+      continue;
     }
     const embedding = output.tolist()[0];
-    // Saved: title, student, year, description (stored, not displayed), embedding
-    outputJSON.embeddings.push({ title, student, year: venue.name, description, embedding });
+    // CHANGED: save the project ID so results can link to the WordPress page
+    const id = project.project_id ?? project.id;
+    outputJSON.embeddings.push({ id, title, student, year: venue.name, description, embedding });
   }
   const fileOut = `embeddings/thesis-embeddings-${venue.id}.json`;
   fs.writeFileSync(fileOut, JSON.stringify(outputJSON));
