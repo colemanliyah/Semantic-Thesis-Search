@@ -61,31 +61,39 @@ if (input) {
     const query = input.value.trim();
     if (!query) return;
 
-    const output = await extractor(query, { pooling: 'mean', normalize: true });
-    const queryEmbedding = output.data;
-
-    // Blend: meaning (title + description) + keyword (title + student name)
-    const scored = embeddings
-      .map((item) => {
-        const sem = cosineSimilarity(item.embedding, queryEmbedding);
-        const kw = keywordScore(query, `${item.title} ${item.student}`);
-        // A full keyword match (e.g. someone's whole name) jumps to the top
-        const blend = SEMANTIC_WEIGHT * sem + KEYWORD_WEIGHT * kw + (kw === 1 ? 1 : 0);
-        return { item, sem, kw, blend };
-      })
-      .filter((r) => r.sem >= THRESHOLD || r.kw > 0)
-      .sort((a, b) => b.blend - a.blend)
-      .slice(0, MAX_RESULTS);
-
+    try {
+      const scored = await rankProjects(query);
       const ids = scored.map(({ item }) => item.id).filter(Boolean);
       // Save scores so the results page can print the table and order the projects
       const rows = scored.map((r) => ({ id: r.item.id, title: r.item.title, sem: +r.sem.toFixed(2), kw: +r.kw.toFixed(2), blend: +r.blend.toFixed(2) }));
       try { sessionStorage.setItem('semanticResults', JSON.stringify({ q: query, rows })); } catch (e) {}
       // Pass IDs in a short-lived cookie (tied to this query) so the URL stays clean
       document.cookie = `semantic=${encodeURIComponent(JSON.stringify({ q: query, ids }))}; path=/; max-age=300`;
-      window.location.href = `${window.semanticSearch.home}?s=${encodeURIComponent(query)}`;
-
+    } catch (err) {
+      // Semantic search broke: clear old results so WordPress runs its normal keyword search
+      console.warn('Semantic search failed, using keyword search instead:', err);
+      document.cookie = 'semantic=; path=/; max-age=0';
+      try { sessionStorage.removeItem('semanticResults'); } catch (e) {}
+    }
+    window.location.href = `${window.semanticSearch.home}?s=${encodeURIComponent(query)}`;
   });
+}
+
+// Score every project: meaning (title + description) blended with keyword (title + student name)
+async function rankProjects(query) {
+  const output = await extractor(query, { pooling: 'mean', normalize: true });
+  const queryEmbedding = output.data;
+  return embeddings
+    .map((item) => {
+      const sem = cosineSimilarity(item.embedding, queryEmbedding);
+      const kw = keywordScore(query, `${item.title} ${item.student}`);
+      // A full keyword match (e.g. someone's whole name) jumps to the top
+      const blend = SEMANTIC_WEIGHT * sem + KEYWORD_WEIGHT * kw + (kw === 1 ? 1 : 0);
+      return { item, sem, kw, blend };
+    })
+    .filter((r) => r.sem >= THRESHOLD || r.kw > 0)
+    .sort((a, b) => b.blend - a.blend)
+    .slice(0, MAX_RESULTS);
 }
 
 // Share (0 to 1) of query words that start a word in the title or name
