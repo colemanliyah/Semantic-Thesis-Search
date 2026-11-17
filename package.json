@@ -8,7 +8,6 @@
     "fetch": "node fetch-projects.js",
     "embeddings": "node make-embeddings.js",
     "convert-wp": "node convert-wp-export.js",
-    "deploy": "./deploy.sh",
     "prototypes": "node prototypes/server.js"
   },
   "author": "",
