@@ -1,6 +1,15 @@
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.0';
 
 env.allowLocalModels = false;
+
+// One file per year (venue id from venues.json); add more here
+const EMBEDDINGS_FILES = [
+  'thesis-embeddings-188.json', // 2023
+  'thesis-embeddings-193.json', // 2023 Low Res
+  'thesis-embeddings-202.json', // 2024
+  'thesis-embeddings-224.json', // 2026
+  'thesis-embeddings-214.json', // 2025 (data exported from WordPress; API returns none)
+];
 const THRESHOLD = 0.4;       // min semantic score (unless a keyword matches)
 const MAX_RESULTS = 10;
 const SEMANTIC_WEIGHT = 0.7; // blend weights (add up to 1)
@@ -16,21 +25,29 @@ function showRankedResults() {
   const s = new URLSearchParams(location.search).get('s');
   if (!last || s === null || last.q !== s.trim()) return;
 
-  console.table(last.rows);
-  const list = document.querySelector('.gallery-list');
-  if (!list) return;
   // Gallery items have ids like "project-10964"; append in rank order
-  for (const row of last.rows) {
+  const list = document.querySelector('.gallery-list');
+  const rows = last.rows.map((row) => {
     const li = document.getElementById(`project-${row.id}`);
-    if (li && li.parentElement === list) list.appendChild(li);
-  }
+    if (list && li && li.parentElement === list) list.appendChild(li);
+    // shown = false means WordPress has no post with this project_id
+    return { ...row, shown: !!li };
+  });
+  console.table(rows);
 }
 
 const extractor = await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5');
 
-// Load embeddings from the plugin folder (not the page's URL)
-const raw = await fetch(new URL('thesis-embeddings-202.json', import.meta.url));
-const { embeddings } = await raw.json();
+// Load every year's embeddings from the plugin's embeddings/ folder; skip any that fail
+let embeddings = [];
+for (const file of EMBEDDINGS_FILES) {
+  try {
+    const res = await fetch(new URL(`embeddings/${file}`, import.meta.url));
+    embeddings = embeddings.concat((await res.json()).embeddings);
+  } catch (e) {
+    console.log('Could not load', file);
+  }
+}
 
 // Modules run after the page is parsed, so the search box already exists
 const input = document.querySelector('input[name="s"], input[type="search"]');
@@ -73,10 +90,11 @@ if (input) {
 
 // Share (0 to 1) of query words that start a word in the title or name
 function keywordScore(query, text) {
-  const words = query.toLowerCase().split(/\W+/).filter((w) => w.length >= 2);
+  const words = query.toLowerCase().split(/\W+/).filter(Boolean);
   if (words.length === 0) return 0;
   const textWords = text.toLowerCase().split(/\W+/);
-  const hits = words.filter((w) => textWords.some((t) => t.startsWith(w))).length;
+  // 1-letter words (e.g. the name "B") must match a whole word; longer words match the start
+  const hits = words.filter((w) => textWords.some((t) => (w.length === 1 ? t === w : t.startsWith(w)))).length;
   return hits / words.length;
 }
 

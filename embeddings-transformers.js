@@ -3,8 +3,10 @@ import { pipeline } from '@xenova/transformers';
 
 const extractor = await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5');
 
-//const { venues } = JSON.parse(fs.readFileSync('venues.json', 'utf-8'));
-let venues = [{ id: 202 }];
+// Usage: node embeddings-transformers.js 224 202   (venue ids from venues.json; none = all)
+const allVenues = JSON.parse(fs.readFileSync('venues.json', 'utf-8')).venues;
+const ids = process.argv.slice(2).map(Number);
+const venues = ids.length ? allVenues.filter((v) => ids.includes(v.id)) : allVenues;
 
 // CHANGED: create the output folder if it's missing
 fs.mkdirSync('embeddings', { recursive: true });

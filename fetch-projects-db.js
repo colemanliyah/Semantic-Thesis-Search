@@ -1,9 +1,9 @@
 import fs from 'fs';
 
-let data = fs.readFileSync('venues.json', 'utf-8');
-let { venues } = JSON.parse(data);
-
-//let venues = [{ id: 202 }];
+// Usage: node fetch-projects-db.js 214 188   (venue ids from venues.json; none = all)
+const allVenues = JSON.parse(fs.readFileSync('venues.json', 'utf-8')).venues;
+const ids = process.argv.slice(2).map(Number);
+const venues = ids.length ? allVenues.filter((v) => ids.includes(v.id)) : allVenues;
 
 for (let i = 0; i < venues.length; i++) {
   let venue = venues[i];
