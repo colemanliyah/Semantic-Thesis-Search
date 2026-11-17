@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-// Usage: node fetch-projects-db.js 214 188   (venue ids from venues.json; none = all)
+// Usage: node fetch-projects.js 214 188   (venue ids from venues.json; none = all)
 const allVenues = JSON.parse(fs.readFileSync('venues.json', 'utf-8')).venues;
 const ids = process.argv.slice(2).map(Number);
 const venues = ids.length ? allVenues.filter((v) => ids.includes(v.id)) : allVenues;

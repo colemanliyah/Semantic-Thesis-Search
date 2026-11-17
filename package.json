@@ -1,11 +1,15 @@
 {
   "name": "thesis-semantic-search",
   "version": "0.0.1",
-  "description": "Experimenting with ITP Thesis Semantic Search",
-  "main": "index.js",
+  "description": "Semantic + keyword search for the ITP thesis archive",
+  "main": "make-embeddings.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "fetch": "node fetch-projects.js",
+    "embeddings": "node make-embeddings.js",
+    "convert-wp": "node convert-wp-export.js",
+    "deploy": "./deploy.sh",
+    "prototypes": "node prototypes/server.js"
   },
   "author": "",
   "license": "ISC",
