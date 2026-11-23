@@ -64,19 +64,3 @@ add_filter('the_posts', function ($posts, $q) {
     }
     return $posts;
 }, 99, 2);
-
-// add_action('wp_head', function () {
-//     $file = plugin_dir_path(__FILE__) . 'semantic-search.js';
-//     $src  = plugin_dir_url(__FILE__) . 'semantic-search.js?ver=' . filemtime($file);
-//     echo '<script type="module" src="' . esc_url($src) . '"></script>';
-// });
-
-// add_action('wp_enqueue_scripts', function () {
-//     wp_enqueue_script(
-//         'semantic-search',
-//         plugin_dir_url(__FILE__) . 'semantic-search.js',
-//         [],
-//         '0.1',
-//         false   // load at bottom of page
-//     );
-// });
