@@ -25,11 +25,19 @@ function showRankedResults() {
   const s = new URLSearchParams(location.search).get('s');
   if (!last || s === null || last.q !== s.trim()) return;
 
+  // Subtle marker: a small faded ✦ after each semantic result's title
+  const style = document.createElement('style');
+  style.textContent = `.semantic-match h3 a::after {
+    content: '✦'; margin-left: 0.3em; font-size: 0.7em; opacity: 0.45; vertical-align: super;
+  }`;
+  document.head.appendChild(style);
+
   // Gallery items have ids like "project-10964"; append in rank order
   const list = document.querySelector('.gallery-list');
   const rows = last.rows.map((row) => {
     const li = document.getElementById(`project-${row.id}`);
     if (list && li && li.parentElement === list) list.appendChild(li);
+    li?.classList.add('semantic-match');
     // shown = false means WordPress has no post with this project_id
     return { ...row, shown: !!li };
   });

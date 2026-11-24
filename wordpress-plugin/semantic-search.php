@@ -36,7 +36,7 @@ function semantic_post_ids($project_ids) {
     return $post_ids;
 }
 
-// Any front-end search (WordPress's own OR the theme's custom WP_Query) with ?semantic=
+// Any front-end search (WordPress's own OR the theme's custom WP_Query) that has semantic results in the cookie
 function is_semantic_query($q) {
     return !is_admin() && $q->get('s') && semantic_ids() !== null;
 }
@@ -56,11 +56,4 @@ add_filter('posts_search', function ($search, $q) {
     return $search;
 }, 1000, 2); // must run after WP Extended Search (priority 500)
 
-// Visible marker: prefix titles on semantic search results
-add_filter('the_posts', function ($posts, $q) {
-    if (!is_semantic_query($q)) return $posts;
-    foreach ($posts as $post) {
-        if (strpos($post->post_title, '[Semantic] ') !== 0) $post->post_title = '[Semantic] ' . $post->post_title;
-    }
-    return $posts;
-}, 99, 2);
+// (The ✦ marker on semantic results is added by semantic-search.js on the results page)
