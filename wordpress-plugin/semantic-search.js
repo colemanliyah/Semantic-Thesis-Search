@@ -42,7 +42,7 @@ const extractor = await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5
 let embeddings = [];
 for (const file of EMBEDDINGS_FILES) {
   try {
-    const res = await fetch(new URL(`embeddings/${file}`, import.meta.url));
+    const res = await fetch(new URL(`embeddings/${file}`, import.meta.url), { cache: 'no-cache' }); // re-check server so updated files aren't stale
     embeddings = embeddings.concat((await res.json()).embeddings);
   } catch (e) {
     console.log('Could not load', file);
@@ -65,7 +65,7 @@ if (input) {
       const scored = await rankProjects(query);
       const ids = scored.map(({ item }) => item.id).filter(Boolean);
       // Save scores so the results page can print the table and order the projects
-      const rows = scored.map((r) => ({ id: r.item.id, title: r.item.title, sem: +r.sem.toFixed(2), kw: +r.kw.toFixed(2), blend: +r.blend.toFixed(2) }));
+      const rows = scored.map((r) => ({ id: r.item.id, title: r.item.title, year: (r.item.year ?? '').match(/\d{4}/)?.[0] ?? '', sem: +r.sem.toFixed(2), kw: +r.kw.toFixed(2), blend: +r.blend.toFixed(2) }));
       try { sessionStorage.setItem('semanticResults', JSON.stringify({ q: query, rows })); } catch (e) {}
       // Pass IDs in a short-lived cookie (tied to this query) so the URL stays clean
       document.cookie = `semantic=${encodeURIComponent(JSON.stringify({ q: query, ids }))}; path=/; max-age=300`;
